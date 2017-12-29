@@ -223,10 +223,10 @@ class AirCargoProblem(Problem):
         # ---------------------
         # This algorithm uses the comparison of two sets: goals and positive fluents.
         # The positive fluents are initialized with those of the current node state.
-        # The algorithm checks of the goals are not already contained in the positive
+        # The algorithm checks if the goals are not already contained in the positive
         # fluents. It sorts the actions in descending order of the number of new
         # positive fluents they add. It greedily uses the action with the most
-        # fluents first. Since either the goal will be met or all cations will be
+        # fluents first. Since either the goal will be met or all actions will be
         # checked, it always returns an answer. Because there is no guarantee the
         # the minimal number of actions is returned, the resulting heuristic is not
         # guaranteed to be admissible. For this air cargo problem, however, all
