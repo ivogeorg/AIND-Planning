@@ -184,7 +184,8 @@ class PgNode_a(PgNode):
 
 
 def mutexify(node1: PgNode, node2: PgNode):
-    """ adds sibling nodes to each other's mutual exclusion (mutex) set. These should be sibling nodes!
+    """ adds sibling nodes to each other's mutual exclusion (mutex) set.
+    These should be sibling nodes!
 
     :param node1: PgNode (or inherited PgNode_a, PgNode_s types)
     :param node2: PgNode (or inherited PgNode_a, PgNode_s types)
@@ -205,16 +206,25 @@ class PlanningGraph():
 
     def __init__(self, problem: Problem, state: str, serial_planning=True):
         """
-        :param problem: PlanningProblem (or subclass such as AirCargoProblem or HaveCakeProblem)
-        :param state: str (will be in form TFTTFF... representing fluent states)
-        :param serial_planning: bool (whether or not to assume that only one action can occur at a time)
+        :param problem: PlanningProblem (or subclass such as
+               AirCargoProblem or HaveCakeProblem)
+        :param state: str (will be in form TFTTFF...
+               representing fluent states)
+        :param serial_planning: bool (whether or not to assume
+               that only one action can occur at a time)
         Instance variable calculated:
             fs: FluentState
-                the state represented as positive and negative fluent literal lists
-            all_actions: list of the PlanningProblem valid ground actions combined with calculated no-op actions
-            s_levels: list of sets of PgNode_s, where each set in the list represents an S-level in the planning graph
-            a_levels: list of sets of PgNode_a, where each set in the list represents an A-level in the planning graph
+                the state represented as positive and negative
+                fluent literal lists
+            all_actions: list of the PlanningProblem valid ground
+                         actions combined with calculated no-op actions
+            s_levels: list of sets of PgNode_s, where each set in the
+                      list represents an S-level in the planning graph
+            a_levels: list of sets of PgNode_a, where each set in the
+                      list represents an A-level in the planning graph
         """
+
+        # Note: Problem class has no state_map or actions_list so subclass implicitly expected
         self.problem = problem
         self.fs = decode_state(state, problem.state_map)
         self.serial = serial_planning
@@ -253,22 +263,26 @@ class PlanningGraph():
         return action_list
 
     def create_graph(self):
-        """ build a Planning Graph as described in Russell-Norvig 3rd Ed 10.3 or 2nd Ed 11.4
+        """ build a Planning Graph as described in R-N 3rd Ed 10.3 or 2nd Ed 11.4
 
-        The S0 initial level has been implemented for you.  It has no parents and includes all of
-        the literal fluents that are part of the initial state passed to the constructor.  At the start
-        of a problem planning search, this will be the same as the initial state of the problem.  However,
-        the planning graph can be built from any state in the Planning Problem
+        The S0 initial level has been implemented for you.  It has no parents
+        and includes all of the literal fluents that are part of the initial
+        state passed to the constructor.  At the start of a problem planning
+        search, this will be the same as the initial state of the problem.
+        However, the planning graph can be built from any state in the
+        Planning Problem.
 
         This function should only be called by the class constructor.
 
         :return:
-            builds the graph by filling s_levels[] and a_levels[] lists with node sets for each level
+            builds the graph by filling s_levels[] and a_levels[] lists with
+            node sets for each level
         """
         # the graph should only be built during class construction
         if (len(self.s_levels) != 0) or (len(self.a_levels) != 0):
             raise Exception(
-                'Planning Graph already created; construct a new planning graph for each new state in the planning sequence')
+                'Planning Graph already created; construct a new planning graph '
+                'for each new state in the planning sequence')
 
         # initialize S0 to literals in initial state provided.
         leveled = False
@@ -281,8 +295,8 @@ class PlanningGraph():
             self.s_levels[level].add(PgNode_s(literal, False))
         # no mutexes at the first level
 
-        # continue to build the graph alternating A, S levels until last two S levels contain the same literals,
-        # i.e. until it is "leveled"
+        # continue to build the graph alternating A, S levels until last two
+        # S levels contain the same literals, i.e. until it is "leveled"
         while not leveled:
             self.add_action_level(level)
             self.update_a_mutex(self.a_levels[level])
@@ -298,44 +312,66 @@ class PlanningGraph():
         """ add an A (action) level to the Planning Graph
 
         :param level: int
-            the level number alternates S0, A0, S1, A1, S2, .... etc the level number is also used as the
-            index for the node set lists self.a_levels[] and self.s_levels[]
+            the level number alternates S0, A0, S1, A1, S2, .... etc the
+            level number is also used as the index for the node set lists
+            self.a_levels[] and self.s_levels[]
         :return:
             adds A nodes to the current level in self.a_levels[level]
         """
-        # TODO add action A level to the planning graph as described in the Russell-Norvig text
-        # 1. determine what actions to add and create those PgNode_a objects
-        # 2. connect the nodes to the previous S literal level
-        # for example, the A0 level will iterate through all possible actions for the problem and add a PgNode_a to a_levels[0]
-        #   set iff all prerequisite literals for the action hold in S0.  This can be accomplished by testing
-        #   to see if a proposed PgNode_a has prenodes that are a subset of the previous S level.  Once an
-        #   action node is added, it MUST be connected to the S node instances in the appropriate s_level set.
+        # TODO add action A level to the planning graph as described in the R-N text
+        # 1. Determine what actions to add and create those PgNode_a objects.
+        # 2. Connect the nodes to the previous S literal level.
+        # For example, the A0 level will iterate through all possible actions
+        #   for the problem and add a PgNode_a to a_levels[0] set iff all
+        #   prerequisite literals for the action hold in S0.  This can be
+        #   accomplished by testing to see if a proposed PgNode_a has prenodes
+        #   that are a subset of the previous S level.  Once an action node is
+        #   added, it MUST be connected to the S node instances in the
+        #   appropriate s_level set.
+
+        print("Graph has {} actions".format(len(self.all_actions)))
+        for a in self.all_actions:
+            new_node = PgNode_a(a)
+            # print(str(a))
+            # new_node.show()
+            if new_node.prenodes <= self.s_levels[level]:
+                print("Found candidate node with {} prenodes".format(len(new_node.prenodes)))
+                new_node.show()
+                self.a_levels[level].add(new_node)
+                # TODO connect
+            else:
+                print("Impossible action with {} prenodes".format(len(new_node.prenodes)))
 
     def add_literal_level(self, level):
         """ add an S (literal) level to the Planning Graph
 
         :param level: int
-            the level number alternates S0, A0, S1, A1, S2, .... etc the level number is also used as the
-            index for the node set lists self.a_levels[] and self.s_levels[]
+            the level number alternates S0, A0, S1, A1, S2, .... etc the level
+            number is also used as the index for the node set lists
+            self.a_levels[] and self.s_levels[]
         :return:
             adds S nodes to the current level in self.s_levels[level]
         """
         # TODO add literal S level to the planning graph as described in the Russell-Norvig text
-        # 1. determine what literals to add
-        # 2. connect the nodes
-        # for example, every A node in the previous level has a list of S nodes in effnodes that represent the effect
-        #   produced by the action.  These literals will all be part of the new S level.  Since we are working with sets, they
-        #   may be "added" to the set without fear of duplication.  However, it is important to then correctly create and connect
-        #   all of the new S nodes as children of all the A nodes that could produce them, and likewise add the A nodes to the
-        #   parent sets of the S nodes
+        # 1. Determine what literals to add.
+        # 2. Connect the nodes.
+        # For example, every A node in the previous level has a list of S nodes
+        #   in effnodes that represent the effect produced by the action. These
+        #   literals will all be part of the new S level.  Since we are working
+        #   with sets, they may be "added" to the set without fear of
+        #   duplication.  However, it is important to then correctly create and
+        #   connect all of the new S nodes as children of all the A nodes that
+        #   could produce them, and likewise add the A nodes to the parent sets
+        #   of the S nodes.
 
     def update_a_mutex(self, nodeset):
         """ Determine and update sibling mutual exclusion for A-level nodes
 
         Mutex action tests section from 3rd Ed. 10.3 or 2nd Ed. 11.4
-        A mutex relation holds between two actions a given level
-        if the planning graph is a serial planning graph and the pair are nonpersistence actions
-        or if any of the three conditions hold between the pair:
+        A mutex relation holds between two actions at a given level if the
+        planning graph is a serial planning graph and the pair are non-
+        persistence actions or if any of the following three conditions hold
+        between the pair:
            Inconsistent Effects
            Interference
            Competing needs

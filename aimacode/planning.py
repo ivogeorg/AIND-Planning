@@ -33,7 +33,7 @@ class Action:
         return "{}{!s}".format(self.name, self.args)
 
     def substitute(self, e, args):
-        """Replaces variables in expression with their respective Propostional symbol"""
+        """Replaces variables in expression with their respective Propositional symbol"""
         new_args = list(e.args)
         for num, x in enumerate(e.args):
             for i in range(len(self.args)):
